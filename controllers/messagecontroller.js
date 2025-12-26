@@ -72,3 +72,18 @@ exports.getconversation = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+exports.deleteMessage = async (req, res) => {
+  try {
+    const messageId = req.params.id;
+    const deleted = await messageDao.deletemessage(messageId);
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    res.json({ message: "Message deleted successfully" });
+  } catch (err) {
+    console.error("Error in deleteMessage:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

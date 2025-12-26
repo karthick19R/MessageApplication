@@ -6,15 +6,14 @@ const messageDao = {
   addMessage,
   getAllMessages,
   getMessageById,
-  getConversation
+  getConversation,
+  deletemessage
 };
 
-// Add a new message
 async function addMessage(senderId, content, receiverId) {
   return Message.create({ senderId, content, receiverId });
 }
 
-// Get all messages for a user
 async function getAllMessages(userId) {
   return Message.findAll({
     where: {
@@ -28,7 +27,6 @@ async function getAllMessages(userId) {
   });
 }
 
-// Get message by ID
 async function getMessageById(userId, messageId) {
   return Message.findOne({
     where: {
@@ -42,7 +40,6 @@ async function getMessageById(userId, messageId) {
   });
 }
 
-// Get conversation between two users
 async function getConversation(userId, otherUserId) {
   return Message.findAll({
     where: {
@@ -55,8 +52,11 @@ async function getConversation(userId, otherUserId) {
       { model: User, as: 'sender', attributes: ['id', 'name', 'email'] },
       { model: User, as: 'receiver', attributes: ['id', 'name', 'email'] }
     ],
-    order: [['createdAt', 'ASC']] // oldest first
+    order: [['createdAt', 'ASC']] 
   });
+}
+async function deletemessage(id) {
+  return Message.destroy({where :{id}});
 }
 
 module.exports = messageDao;

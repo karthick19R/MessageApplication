@@ -9,4 +9,6 @@ router.get('/messagebyid/:id',auth,messagecontrol.getmessagebyid);
 
 router.get('/message/conversation',auth,messagecontrol.getconversation);
 
+router.delete('/delete/:id',auth,messagecontrol.deleteMessage);
+
 module.exports = router
