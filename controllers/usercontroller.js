@@ -15,7 +15,7 @@ exports.signup = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(404).json({ error: err.message });
   }
 };
 
@@ -35,7 +35,7 @@ exports.login = async (req, res) => {
       token: token,
     });
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    return res.status(404).json({ error: err.message });
   }
 };
 
@@ -58,17 +58,15 @@ exports.updateuser = async (req, res) => {
 
     res.json({ message: "Username updated successfully", username });
   } catch (err) {
-    console.log("Error in update user function")
-    res.status(500).json({ error: err.message });
+    console.log("Error in update user function");
+    res.status(404).json({ error: err.message });
   }
 };
 
 exports.deleteUser = async (req, res) => {
   try {
     const userid = req.user.id;
-    const deleted = await user.destroy(
-      { where: { id: userid } }
-    );
+    const deleted = await user.destroy({ where: { id: userid } });
     if (!deleted) {
       return res
         .status(404)
@@ -77,23 +75,49 @@ exports.deleteUser = async (req, res) => {
 
     res.json({ message: "User deleted successfully" });
   } catch (err) {
-    console.log("Error in delete user function")
-    res.status(500).json({ error: err.message });
+    console.log("Error in delete user function");
+    res.status(404).json({ error: err.message });
   }
 };
 
 exports.viewalluser = async (req, res) => {
   try {
-    const users = await user.findAll()
-    if (users.length===0) {
-      return res
-        .status(404)
-        .json({ error: "No user available" });
+    const users = await user.findAll();
+    if (users.length === 0) {
+      return res.status(404).json({ error: "No user available" });
     }
 
     res.json({ users });
   } catch (err) {
-    console.log("Error in all user function")
+    console.log("Error in all user function");
     res.status(500).json({ error: err.message });
+  }
+};
+
+exports.updatepassword = async (req, res) => {
+  try {
+    const newpassword = req.body.password;
+    const id = req.user.id;
+    if (!newpassword) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    const pass = await bcrypt.hash(newpassword, 10);
+    const update = await user.update(
+      { password: pass },
+      {
+        where: {
+          id: id,
+        },
+      }
+    );
+    if (update === 0)
+      return res.status(404).json({ Error: "error in updating user password" });
+    res.json({ message: "User Password updated successful" });
+  } catch (err) {
+    console.log("error occured in updatemessage", err);
+    return res
+      .status(404)
+      .json({ message: "error while updating user password" });
   }
 };

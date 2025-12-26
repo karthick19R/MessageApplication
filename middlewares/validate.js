@@ -1,27 +1,50 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
-exports.validate = async (req, res, next) => {
-  try {
-    console.log("Inside valiudate function with value", req.body);
-    const { number, password, email } = req.body;
+const { body, validationResult } = require("express-validator");
+const user = require("../models/user");
 
-    const numberValidate = /^\d{10}$/.test(number);
-    if (!numberValidate)
-      return res.status(400).json({ error: "Number is invalid" });
+exports.validate = [
+  body("number")
+    .isLength({ min: 10, max: 10 })
+    .withMessage("Number must be 10 digits")
+    .isNumeric()
+    .withMessage("Number must contain only digits").
+    custom(async (number)=>{
+      const existingnumber = await User.findOne({where :{number}});
+      if (existingnumber) {
+        throw new Error("Number already exists");
+      }
+      return true;
+    }),
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: "Invalid email format" });
+  body("email")
+    .isEmail()
+    .withMessage("Invalid email format")
+    .custom(async (email) => {
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        throw new Error("Email already exists");
+      }
+      return true;
+    }),
+
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
+
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      req.body.password = hashedPassword;
+
+      next();
+    } catch (err) {
+      console.error("Error in validation middleware", err);
+      res.status(500).json({ error: "Internal server error" });
     }
-    const exEmail = await User.findOne({ where: { email: email } });
-    if (exEmail)
-      return res.status(400).json({ error: "User email already exists" });
-
-    const pass = await bcrypt.hash(password, 10);
-    req.body.password = pass;
-    next();
-  } catch (err) {
-    console.log("Error in Validation function", err);
-    return res.status(500).json({ error: "Error in Validation" });
-  }
-};
+  },
+];

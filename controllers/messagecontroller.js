@@ -33,7 +33,6 @@ exports.addmessage = async (req, res) => {
 exports.getallmessage = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const messages = await Message.findAll({
       where: {
         [Op.or]: [

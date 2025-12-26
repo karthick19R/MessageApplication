@@ -5,7 +5,7 @@ router.post('/addmessage',auth,messagecontrol.addmessage);
 
 router.get('/allmessage',auth,messagecontrol.getallmessage);
 
-router.get('/message/:id',auth,messagecontrol.getmessagebyid);
+router.get('/messagebyid/:id',auth,messagecontrol.getmessagebyid);
 
 router.get('/message/conversation',auth,messagecontrol.getconversation);
 
