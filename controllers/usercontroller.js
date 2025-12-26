@@ -1,13 +1,13 @@
-const user = require("../models/user");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const userDao = require('../DAO/userdao');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 exports.signup = async (req, res) => {
   try {
-    const data = await user.create(req.body);
+    const data = await userDao.createUser(req.body);
     res.json({
-      message: "User Created",
+      message: 'User Created',
       user: {
         id: data.id,
         name: data.name,
@@ -15,109 +15,84 @@ exports.signup = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(404).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const exUser = await user.findOne({ where: { email } });
-    if (!exUser) return res.status(400).json({ message: "NO User Found" });
+    const exUser = await userDao.findByEmail(email);
+    if (!exUser) return res.status(400).json({ message: 'No User Found' });
+
     const match = await bcrypt.compare(password, exUser.password);
-    if (!match) return res.status(400).json({ error: "Invalid Password" });
+    if (!match) return res.status(400).json({ error: 'Invalid Password' });
+
     const token = jwt.sign(
       { id: exUser.id, username: exUser.name },
       process.env.JWT_SECRETKEY,
-      { expiresIn: "1h" }
+      { expiresIn: '1h' }
     );
-    res.json({
-      token: token,
-    });
+
+    res.json({ token });
   } catch (err) {
-    return res.status(404).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
-exports.updateuser = async (req, res) => {
+exports.updateUser = async (req, res) => {
   try {
     const userid = req.user.id;
     const { username } = req.body;
     if (!username || username.length < 3)
-      return res.status(401).json({ message: " Invalid Name" });
-    //const updatevalue = await user.update();
-    const [updated] = await user.update(
-      { name: username },
-      { where: { id: userid } }
-    );
-    if (!updated) {
-      return res
-        .status(404)
-        .json({ error: "User not found or no changes made" });
-    }
+      return res.status(400).json({ message: 'Invalid Name' });
 
-    res.json({ message: "Username updated successfully", username });
+    const [updated] = await userDao.updateById(userid, { name: username });
+    if (!updated) return res.status(404).json({ error: 'User not found or no changes made' });
+
+    res.json({ message: 'Username updated successfully', username });
   } catch (err) {
-    console.log("Error in update user function");
-    res.status(404).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
 exports.deleteUser = async (req, res) => {
   try {
     const userid = req.user.id;
-    const deleted = await user.destroy({ where: { id: userid } });
-    if (!deleted) {
-      return res
-        .status(404)
-        .json({ error: "User not found or no changes made" });
-    }
+    const deleted = await userDao.deleteById(userid);
+    if (!deleted) return res.status(404).json({ error: 'User not found or no changes made' });
 
-    res.json({ message: "User deleted successfully" });
+    res.json({ message: 'User deleted successfully' });
   } catch (err) {
-    console.log("Error in delete user function");
-    res.status(404).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
-exports.viewalluser = async (req, res) => {
+exports.viewAllUsers = async (req, res) => {
   try {
-    const users = await user.findAll();
-    if (users.length === 0) {
-      return res.status(404).json({ error: "No user available" });
-    }
+    const users = await userDao.findAll();
+    if (!users.length) return res.status(404).json({ error: 'No users available' });
 
     res.json({ users });
   } catch (err) {
-    console.log("Error in all user function");
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.updatepassword = async (req, res) => {
+exports.updatePassword = async (req, res) => {
   try {
-    const newpassword = req.body.password;
+    const newPassword = req.body.password;
     const id = req.user.id;
-    if (!newpassword) {
-      return res.status(400).json({ error: "Password is required" });
-    }
 
-    const pass = await bcrypt.hash(newpassword, 10);
-    const update = await user.update(
-      { password: pass },
-      {
-        where: {
-          id: id,
-        },
-      }
-    );
-    if (update === 0)
-      return res.status(404).json({ Error: "error in updating user password" });
-    res.json({ message: "User Password updated successful" });
+    if (!newPassword) return res.status(400).json({ error: 'Password is required' });
+
+    const hashedPass = await bcrypt.hash(newPassword, 10);
+    const [updated] = await userDao.updateById(id, { password: hashedPass });
+
+    if (!updated) return res.status(404).json({ error: 'Error updating password' });
+
+    res.json({ message: 'Password updated successfully' });
   } catch (err) {
-    console.log("error occured in updatemessage", err);
-    return res
-      .status(404)
-      .json({ message: "error while updating user password" });
+    res.status(400).json({ error: err.message });
   }
 };
