@@ -7,10 +7,10 @@ router.post("/login", userController.login);
 
 router.post("/signup", validate, userController.signup);
 
-router.put("/update", auth, userController.updateuser);
+router.put("/update", auth, userController.updateUser);
 
 router.delete("/delete", auth, userController.deleteUser);
 
-router.get('/alluser',auth,userController.viewalluser)
+router.get('/alluser',auth,userController.viewAllUsers)
 
 module.exports = router;
